@@ -1,0 +1,165 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  hashedPassword String?
+  name           String?
+  role           String   @default("traveler")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  travelerProfile TravelerProfile?
+  bookings       Booking[]
+  favorites      Favorite[]
+  memberships    Membership[]
+  conversations  Conversation[]
+}
+
+model TravelerProfile {
+  id                     String   @id @default(cuid())
+  userId                 String   @unique
+  partyType              String
+  adults                 Int
+  children               Int
+  childAges              Json
+  seniors                Int
+  accessibilityNeeds     String?
+  preferredNiches        Json
+  budgetBand             String
+  preferredBoardBasis    String?
+  preferredClimate       String?
+  tripGoals              Json
+  savedPaymentPreference String?
+  user                   User     @relation(fields: [userId], references: [id])
+}
+
+model Resort {
+  id                 String   @id @default(cuid())
+  liteApiHotelId     String   @unique
+  name               String
+  slug               String   @unique
+  destinationName    String
+  countryCode        String
+  geoLat             Float?
+  geoLng             Float?
+  starRating         Int
+  boardBasisOptions  Json
+  adultsOnly         Boolean
+  familyFriendly     Boolean
+  wellnessTags       Json
+  sustainabilityTags Json
+  adventureTags      Json
+  privacyTags        Json
+  amenities          Json
+  images             Json
+  description        String
+  editorialSummary   String
+  rankingSignals     Json
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  rateQuotes         RateQuote[]
+  bookings           Booking[]
+  favorites          Favorite[]
+}
+
+model SearchSession {
+  id                  String   @id @default(cuid())
+  userId              String?
+  query               String
+  destination         String
+  checkIn             DateTime
+  checkOut            DateTime
+  rooms               Int
+  adults              Int
+  children            Int
+  filtersJson         Json
+  rankingVersion      String
+  resultsSnapshotJson Json
+  createdAt           DateTime @default(now())
+}
+
+model RateQuote {
+  id                 String   @id @default(cuid())
+  resortId           String
+  liteApiOfferId     String
+  checkIn            DateTime
+  checkOut           DateTime
+  roomType           String
+  cancellationPolicy String
+  mealPlan           String
+  occupancy          String
+  currency           String
+  totalAmount        Float
+  taxesAmount        Float
+  includedItemsJson  Json
+  refundable         Boolean
+  prebookId          String?
+  createdAt          DateTime @default(now())
+  resort             Resort   @relation(fields: [resortId], references: [id])
+  bookings           Booking[]
+}
+
+model Booking {
+  id                      String   @id @default(cuid())
+  userId                  String
+  resortId                String
+  rateQuoteId             String
+  stripeCheckoutSessionId String?
+  stripePaymentIntentId   String?
+  liteApiBookingId        String?
+  status                  String
+  travelerDetailsJson     Json
+  totalAmount             Float
+  currency                String
+  cancellationPolicyJson  Json
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  user                    User     @relation(fields: [userId], references: [id])
+  resort                  Resort   @relation(fields: [resortId], references: [id])
+  rateQuote               RateQuote @relation(fields: [rateQuoteId], references: [id])
+}
+
+model Membership {
+  id                   String   @id @default(cuid())
+  userId               String
+  stripeCustomerId     String
+  stripeSubscriptionId String
+  plan                 String
+  status               String
+  renewalDate          DateTime
+  user                 User     @relation(fields: [userId], references: [id])
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  resortId  String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  resort    Resort   @relation(fields: [resortId], references: [id])
+}
+
+model Conversation {
+  id           String   @id @default(cuid())
+  userId       String?
+  sessionId    String
+  messagesJson Json
+  handoffStatus String
+  createdAt    DateTime @default(now())
+  user         User?    @relation(fields: [userId], references: [id])
+}
+
+model EventLog {
+  id         String   @id @default(cuid())
+  eventType  String
+  actorId    String?
+  payloadJson Json
+  createdAt  DateTime @default(now())
+}
